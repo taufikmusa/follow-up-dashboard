@@ -27,16 +27,63 @@ const RETRO_SHADOW_HOVER = "hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-
 const RETRO_BORDER = "border-2 border-black";
 
 // Default template message
-const DEFAULT_TEMPLATE = `Salam [GREET] [NAME]. Taufik kat sini. Maaf lama tak followup.
-Tadi masa semak rekod Public Gold, [GREET] [NAME] dah daftar akaun PG sejak tahun 2021. 
+const DEFAULT_TEMPLATE = `Salam [GREET] [NAME]. 
+Maaf lama tak followup.
+Tadi masa semak rekod Public Gold (PG),
+Saya nampak [GREET] [NAME] dah daftar akaun PG sejak tahun [YEAR]. 
 Tahniah sebab start kenal PG awal.
-Masa tahun 2021 dulu, harga emas sekitar RM240 ke RM275 segram. 
-Sekarang harga dah cecah RM634 segram. Nilai emas [GREET] [NAME] dah naik lebih 2 kali ganda.
-Pakar kewangan unjur harga emas boleh naik sampai RM700 ke RM800 segram hujung tahun ni. Sekarang masa paling sesuai untuk sambung simpan balik.
-Saya perasan [GREET] [NAME] dah lama tak topup akaun. Boleh login sistem macam biasa tak?
+Masa tahun [YEAR] dulu, harga emas sekitar RM240 ke RM275 segram. 
+Hari ni harga dah cecah RM634 segram. Nilai emas [GREET] [NAME] dah naik lebih 2 kali ganda.
+Pakar kewangan unjur harga emas boleh naik sampai RM700 ke RM800 segram hujung tahun ni. 
+Sekarang masa paling sesuai untuk sambung simpan balik.
+PG ada notify [GREET] [NAME] dah lama tak topup akaun. 
+[GREET] [NAME] masih boleh login akaun PG macam biasa tak?
 Kalau lupa username atau password, Boleh reply whatsapp ya. Saya terus guide cara reset.
 Taufik (PG Dealer)
 https://pg2u.my/taufikmusa`;
+
+const QUICK_TEMPLATES = [
+  {
+    title: "Update Password",
+    content: `[GREET] [NAME] boleh update password ikut step dekat sini
+https://pg2u.my/taufikmusa/update-password
+Boleh update di website Public Gold
+https://publicgold.com.my/index.php?route=account/login
+*Klik Forgot Password di website untuk reset kalau terlupa password asal`
+  },
+  {
+    title: "Download Apps",
+    content: `[GREET] [NAME] boleh download Apps Public Gold dekat sini
+Android 📱
+https://play.google.com/store/apps/details?id=com.pgmapp.publicgold
+iOS 🍎
+https://apps.apple.com/my/app/public-gold/id1591580964`
+  },
+  {
+    title: "Kenapa Simpan Emas",
+    content: `Salam [GREET] [NAME],
+Sekadar berkongsi artikel dari mentor saya, Tuan Mohd Zulkifli Shafie
+tentang sebab utama kenapa simpan emas
+Moga bermanfaat
+https://www.mohdzulkifli.com/2023/08/inilah-sebab-utama-kenapa-saya-simpan-emas.html`
+  },
+  {
+    title: "Buku Wang Emas",
+    content: `Salam [GREET] [NAME],
+Just nak berkongsi, jika belum baca Buku Wang Emas & Misi Bebas Hutang
+Saya sangat sarankan penyimpan emas baca sebab banyak
+feedback mereka yang dah baca dan buat apa yang
+buku ni sarankan, simpanan mereka bertambah baik.
+InsyaAllah.
+Buku ni tulisan mentor saya, Tuan Mohd Zulkifli Shafie.
+[GREET] [NAME] boleh dapatkan di PGMall, login guna 
+PG Code = [PGCode] dan password sendiri sama macam login
+di Apps Public Gold.
+Link buku dekat sini, PGMall ni macam Shopee macam macam ada, boleh juga shopping benda lain kat sana
+https://pgmall.my/p/N108/0071?referralPgCode=taufikbinmusa14@gmail.com
+Moga bermanfaat!`
+  }
+];
 
 function getCategory(lpd) {
   if (!lpd || lpd.toLowerCase().includes("no sales")) return { ...PRIORITY[0], daysSince: null };
@@ -57,15 +104,19 @@ function calcAge(dob) {
   return Math.floor((TODAY - d) / (365.25 * 86400000));
 }
 
-function getDecade(age) {
+function getAgeGroup(age) {
   if (age === null) return "Unknown";
-  const d = Math.floor(age / 10) * 10;
-  return d < 10 ? "Under 10s" : d >= 70 ? "70s+" : `${d}s`;
+  if (age < 18) return "< 18 tahun";
+  if (age <= 29) return "18 - 29";
+  if (age <= 39) return "30 - 39";
+  if (age <= 49) return "40 - 49";
+  if (age <= 55) return "50 - 55";
+  return "56+";
 }
 
 // Function to guess gender/greeting based on Malay name patterns
 function getGreeting(fullName) {
-  if (!fullName) return "";
+  if (!fullName) return "Cik";
   const upper = fullName.toUpperCase();
   if (upper.includes(" BIN ") || upper.includes(" B. ") || /^(MOHD|MOHAMMAD|MUHAMMAD|MD)\s+/.test(upper)) {
     return "En.";
@@ -73,7 +124,7 @@ function getGreeting(fullName) {
   if (upper.includes(" BINTI ") || upper.includes(" BT ") || upper.includes(" BT. ") || upper.includes(" BTE ")) {
     return "Cik";
   }
-  return "Tuan/Cik"; // Fallback jika tidak pasti
+  return "Cik"; // Fallback kepada Cik jika tidak pasti
 }
 
 // Function to extract short name for WhatsApp text
@@ -171,7 +222,7 @@ function parseCSV(text) {
       frontline: g(iFront), empire: g(iEmpire),
       dateReg: rawReg, lastPurchase: lpd, regYear,
       autodebit: g(iAuto), amount: g(iAmt),
-      age, decade: getDecade(age), cat,
+      age, ageGroup: getAgeGroup(age), cat,
     };
   }).filter(r => (r.name && r.name !== "Unknown") || r.pgcode);
 }
@@ -188,6 +239,22 @@ function avatarColor(name) {
   return cols[h];
 }
 
+function CopyButton({ text }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button 
+      onClick={() => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }} 
+      className={`bg-white text-black font-bold py-1 px-3 text-xs uppercase transition-all ${RETRO_BORDER} shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-[2px]`}
+    >
+      {copied ? "COPIED!" : "COPY"}
+    </button>
+  );
+}
+
 function WaBtn({ customer, big, messageTemplate }) {
   const tel = customer?.telephone;
   if (!tel || tel.length < 7) return <span className="text-gray-500 text-xs italic font-mono">No number</span>;
@@ -195,10 +262,12 @@ function WaBtn({ customer, big, messageTemplate }) {
   const shortName = getShortName(customer.name);
   const greeting = getGreeting(customer.name);
   
-  // Replace kedua-dua tag [NAME] dan [GREET]
+  // Replace all dynamic tags
   const customMessage = messageTemplate
     .replace(/\[NAME\]/gi, shortName)
-    .replace(/\[GREET\]/gi, greeting);
+    .replace(/\[GREET\]/gi, greeting)
+    .replace(/\[YEAR\]/gi, customer.regYear !== "Unknown" ? customer.regYear : "2021")
+    .replace(/\[PGCode\]/gi, customer.pgcode || "");
     
   const encodedMessage = encodeURIComponent(customMessage);
   const href = `https://wa.me/${tel}?text=${encodedMessage}`;
@@ -281,7 +350,7 @@ function Modal({ c, onClose, messageTemplate }) {
 
           <div className={`grid grid-cols-2 gap-0 border-2 border-black mb-6 bg-white`}>
             {[
-              ["BRANCH", c.branch], ["AGE", c.age ? `${c.age} YRS (${c.decade})` : "—"],
+              ["BRANCH", c.branch], ["AGE", c.age ? `${c.age} YRS (${c.ageGroup})` : "—"],
               ["REGISTERED", c.dateReg?.split(" ")[0] || "—"], ["LAST BUY", c.lastPurchase?.toLowerCase().includes("no sales") ? "None" : c.lastPurchase?.split(" ")[0] || "—"],
               ["VERIFIED", c.verified], ["AUTODEBIT", c.autodebit + (c.amount && c.amount !== "—" ? ` (RM${c.amount})` : "")],
               ["FRONTLINE", c.frontline], ["EMPIRE SIZE", c.empire],
@@ -312,13 +381,13 @@ function Dashboard({ data, onReset }) {
   const [search, setSearch] = useState("");
   const [pFilter, setPFilter] = useState("all");
   const [branchFilter, setBranchFilter] = useState("All");
-  const [decadeFilter, setDecadeFilter] = useState("All");
+  const [ageFilter, setAgeFilter] = useState("All");
   const [yearFilter, setYearFilter] = useState("All");
   const [selected, setSelected] = useState(null);
   const [messageTemplate, setMessageTemplate] = useState(DEFAULT_TEMPLATE);
 
   const branches = useMemo(() => [...new Set(data.map(c=>c.branch).filter(Boolean).filter(b=>b!=="—"))].sort(), [data]);
-  const DECADES = ["Under 10s","10s","20s","30s","40s","50s","60s","70s+"];
+  const AGE_GROUPS = ["< 18 tahun", "18 - 29", "30 - 39", "40 - 49", "50 - 55", "56+"];
   const years = useMemo(() => [...new Set(data.map(c=>c.regYear).filter(y=>y!=="Unknown"))].sort((a,b)=>b-a), [data]);
 
   const counts = useMemo(() => {
@@ -330,14 +399,14 @@ function Dashboard({ data, onReset }) {
   const filtered = useMemo(() => data.filter(c => {
     if (pFilter !== "all" && c.cat.key !== pFilter) return false;
     if (branchFilter !== "All" && c.branch !== branchFilter) return false;
-    if (decadeFilter !== "All" && c.decade !== decadeFilter) return false;
+    if (ageFilter !== "All" && c.ageGroup !== ageFilter) return false;
     if (yearFilter !== "All" && c.regYear !== yearFilter) return false;
     if (search) {
       const s = search.toLowerCase();
       return c.name.toLowerCase().includes(s) || c.pgcode.toLowerCase().includes(s) || c.branch.toLowerCase().includes(s) || c.telephone.includes(s);
     }
     return true;
-  }), [data, pFilter, branchFilter, decadeFilter, yearFilter, search]);
+  }), [data, pFilter, branchFilter, ageFilter, yearFilter, search]);
 
   const urgent = (counts.no_txn||0) + (counts.over_1yr||0);
   const active = counts.lt_1mo||0;
@@ -365,23 +434,26 @@ function Dashboard({ data, onReset }) {
 
   const ageChartData = useMemo(() => {
     const aCounts = {};
-    DECADES.forEach(d => aCounts[d] = 0);
+    AGE_GROUPS.forEach(d => aCounts[d] = 0);
     data.forEach(c => {
-      if (c.decade && c.decade !== "Unknown" && aCounts[c.decade] !== undefined) aCounts[c.decade]++;
+      if (c.ageGroup && c.ageGroup !== "Unknown" && aCounts[c.ageGroup] !== undefined) aCounts[c.ageGroup]++;
     });
-    return DECADES.map(name => ({ name, count: aCounts[name] }));
+    return AGE_GROUPS.map(name => ({ name, count: aCounts[name] }));
   }, [data]);
 
-  // Generate a live preview of the message using the first customer in the filtered list (or fallback to generic)
-  const previewCustomer = filtered.length > 0 ? filtered[0] : null;
+  // Generate preview message based on the first filtered customer
   const previewMessage = useMemo(() => {
-    if (!previewCustomer) return messageTemplate;
-    const shortName = getShortName(previewCustomer.name);
-    const greeting = getGreeting(previewCustomer.name);
+    if (filtered.length === 0) return "No data available for preview.";
+    const c = filtered[0];
+    const shortName = getShortName(c.name);
+    const greeting = getGreeting(c.name);
+    
     return messageTemplate
       .replace(/\[NAME\]/gi, shortName)
-      .replace(/\[GREET\]/gi, greeting);
-  }, [messageTemplate, previewCustomer]);
+      .replace(/\[GREET\]/gi, greeting)
+      .replace(/\[YEAR\]/gi, c.regYear !== "Unknown" ? c.regYear : "2021")
+      .replace(/\[PGCode\]/gi, c.pgcode || "");
+  }, [filtered, messageTemplate]);
 
   return (
     <div className="w-full max-w-7xl mx-auto animate-in fade-in zoom-in-95 duration-300">
@@ -431,15 +503,15 @@ function Dashboard({ data, onReset }) {
         <div className="w-full md:w-1/3 flex flex-col">
           <h3 className="text-lg font-black uppercase flex items-center gap-2 mb-2"><MessageSquare size={20}/> Broadcast Engine</h3>
           <p className="text-sm font-bold font-mono text-gray-700 mb-4">Set your WhatsApp template. Links are generated <span className="text-[#FF5757]">instantly</span>.</p>
-          <div className="bg-[#FFFBE5] border-2 border-black p-3 text-xs font-mono mb-4 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+          <div className="bg-[#FFFBE5] border-2 border-black p-3 text-xs font-mono mb-4 shadow-[2px_2px_0px_rgba(0,0,0,1)] shrink-0">
             <span className="block font-black text-black mb-1">PRO-TIP:</span>
-            Gunakan <span className="bg-black text-white px-1">{"[NAME]"}</span> untuk nama pendek dan <span className="bg-black text-white px-1">{"[GREET]"}</span> untuk En./Cik automatik.
+            Gunakan <span className="bg-black text-white px-1">{"[NAME]"}</span> untuk nama, <span className="bg-black text-white px-1">{"[GREET]"}</span> untuk En./Cik automatik, <span className="bg-black text-white px-1">{"[YEAR]"}</span> untuk Tahun Register & <span className="bg-black text-white px-1">{"[PGCode]"}</span> untuk ID.
           </div>
-          <div className="hidden md:flex flex-1 flex-col border-2 border-black bg-[#E5FAFB] p-3 shadow-[inset_2px_2px_0px_rgba(0,0,0,0.1)] overflow-hidden">
-             <div className="text-[10px] font-black uppercase text-black mb-2 border-b border-black pb-1">Live Preview ({previewCustomer ? previewCustomer.name : 'No Data'})</div>
-             <div className="font-mono text-xs text-gray-800 whitespace-pre-wrap overflow-y-auto custom-scrollbar flex-1 pr-2">
-               {previewMessage}
-             </div>
+          <div className="hidden md:flex flex-col flex-1 border-2 border-dashed border-gray-300 p-3 bg-gray-50 overflow-hidden relative">
+            <span className="text-[10px] font-black uppercase text-gray-500 mb-2 shrink-0">Live Preview (Top Result)</span>
+            <div className="text-xs font-mono text-gray-800 whitespace-pre-wrap overflow-y-auto custom-scrollbar flex-1 break-words">
+              {previewMessage}
+            </div>
           </div>
         </div>
         <div className="w-full md:w-2/3">
@@ -449,6 +521,36 @@ function Dashboard({ data, onReset }) {
             className={`w-full h-48 md:h-full bg-white text-black font-mono text-sm p-4 focus:outline-none focus:bg-[#E5FAFB] transition-colors resize-y ${RETRO_BORDER} shadow-[inset_2px_2px_0px_rgba(0,0,0,0.1)]`}
             placeholder="Type your WhatsApp message template here..."
           />
+        </div>
+      </div>
+
+      {/* Quick Templates - NEW SECTION */}
+      <div className={`bg-[#E5FAFB] p-5 mb-8 ${RETRO_BORDER} ${RETRO_SHADOW}`}>
+        <h3 className="text-lg font-black uppercase flex items-center gap-2 mb-4"><FileSpreadsheet size={20}/> Quick Templates</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {QUICK_TEMPLATES.map((tpl, i) => (
+            <div key={i} className={`flex flex-col bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}>
+              <div className="bg-black text-white px-3 py-2 font-black text-xs uppercase border-b-2 border-black truncate">
+                {tpl.title}
+              </div>
+              <div className="p-3 flex-1 flex flex-col relative group">
+                <textarea 
+                  readOnly 
+                  value={tpl.content} 
+                  className="w-full h-24 text-[10px] font-mono text-gray-700 bg-gray-50 p-2 border border-dashed border-gray-300 mb-3 resize-none focus:outline-none custom-scrollbar"
+                />
+                <div className="flex gap-2 mt-auto">
+                  <button 
+                    onClick={() => setMessageTemplate(tpl.content)} 
+                    className={`flex-1 bg-[#CB6CE6] text-black font-black py-2 text-[10px] uppercase transition-all ${RETRO_BORDER} hover:-translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0 active:shadow-none`}
+                  >
+                    USE TEMPLATE
+                  </button>
+                  <CopyButton text={tpl.content} />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -474,6 +576,9 @@ function Dashboard({ data, onReset }) {
           <select value={branchFilter} onChange={e => setBranchFilter(e.target.value)} className={`w-full md:w-auto bg-white text-black font-black uppercase text-sm px-4 py-3 focus:outline-none focus:bg-[#E5FAFB] cursor-pointer appearance-none pr-10 ${RETRO_BORDER} ${RETRO_SHADOW_HOVER}`} style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.75rem center', backgroundSize: '16px' }}>
             <option value="All">ALL BRANCHES</option>{branches.map(b => <option key={b}>{b}</option>)}
           </select>
+          <select value={ageFilter} onChange={e => setAgeFilter(e.target.value)} className={`w-full md:w-auto bg-white text-black font-black uppercase text-sm px-4 py-3 focus:outline-none focus:bg-[#E5FAFB] cursor-pointer appearance-none pr-10 ${RETRO_BORDER} ${RETRO_SHADOW_HOVER}`} style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.75rem center', backgroundSize: '16px' }}>
+            <option value="All">ALL AGES</option>{AGE_GROUPS.map(a => <option key={a}>{a}</option>)}
+          </select>
           <select value={yearFilter} onChange={e => setYearFilter(e.target.value)} className={`w-full md:w-auto bg-white text-black font-black uppercase text-sm px-4 py-3 focus:outline-none focus:bg-[#E5FAFB] cursor-pointer appearance-none pr-10 ${RETRO_BORDER} ${RETRO_SHADOW_HOVER}`} style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.75rem center', backgroundSize: '16px' }}>
             <option value="All">ALL YEARS</option>{years.map(y => <option key={y}>{y}</option>)}
           </select>
@@ -491,8 +596,9 @@ function Dashboard({ data, onReset }) {
               <tr className="bg-gray-200 border-b-4 border-black text-black font-black uppercase tracking-wider text-xs">
                 <th className="px-5 py-4 border-r-2 border-black w-4/12">CUSTOMER INFO</th>
                 <th className="px-5 py-4 border-r-2 border-black w-3/12">LOCATION</th>
+                <th className="px-5 py-4 border-r-2 border-black w-1/12 text-center">AGE</th>
                 <th className="px-5 py-4 border-r-2 border-black w-2/12 text-center">STATUS</th>
-                <th className="px-5 py-4 w-3/12 text-center">ACTION</th>
+                <th className="px-5 py-4 w-2/12 text-center">ACTION</th>
               </tr>
             </thead>
             <tbody className="divide-y-2 divide-black">
@@ -523,6 +629,7 @@ function Dashboard({ data, onReset }) {
                       </div>
                     </td>
                     <td className="px-5 py-3 border-r-2 border-black text-black font-mono text-xs font-bold uppercase truncate max-w-[150px]">{c.branch}</td>
+                    <td className="px-5 py-3 border-r-2 border-black text-center text-black font-black font-mono">{c.age !== null ? c.age : "—"}</td>
                     <td className="px-5 py-3 border-r-2 border-black text-center">
                       <div className={`inline-flex items-center gap-1.5 px-3 py-1 font-bold text-black ${RETRO_BORDER} shadow-[2px_2px_0px_rgba(0,0,0,1)]`} style={{ backgroundColor: c.cat.color }}>
                         <span className="text-[10px] uppercase tracking-widest whitespace-nowrap">{c.cat.short}</span>
